@@ -22,12 +22,64 @@ if (strpos($uri, '/admin/') !== false) {
     <title>Project Management System</title>
     <link rel="stylesheet" href="<?php echo $base; ?>assets/css/style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding-top: 60px;
+        }
+
+        .navbar.fixed-top {
+            z-index: 1050;
+            box-shadow: 0 2px 8px rgba(80, 80, 180, 0.08);
+            background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%) !important;
+        }
+
+        .navbar .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #fff !important;
+        }
+
+        .navbar .navbar-brand img {
+            height: 45px;
+            width: auto;
+            margin-right: 8px;
+            object-fit: contain;
+            background-color: whitesmoke;
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .navbar .nav-link {
+            color: #fff !important;
+            font-weight: 500;
+        }
+
+        .navbar .nav-link.active,
+        .navbar .nav-link:focus,
+        .navbar .nav-link:hover {
+            color: #ede9fe !important;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding-top: 56px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="<?php echo $base; ?>index.php">PMS</a>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand" href="<?php echo $base; ?>index.php">
+                <img src="<?php echo $base; ?>assets/img/logo.png" alt="Logo">
+
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -38,8 +90,6 @@ if (strpos($uri, '/admin/') !== false) {
                         <?php if (is_admin()): ?>
                             <li class="nav-item"><a class="nav-link" href="<?php echo $base; ?>admin/dashboard.php">Admin
                                     Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="<?php echo $base; ?>admin/index.php">Admin Home</a>
-                            </li>
                         <?php elseif (is_manager()): ?>
                             <li class="nav-item"><a class="nav-link" href="<?php echo $base; ?>manager/dashboard.php">Manager
                                     Dashboard</a></li>
@@ -58,4 +108,4 @@ if (strpos($uri, '/admin/') !== false) {
             </div>
         </div>
     </nav>
-    <div class="container mt-4">
+    <div class="container-fluid mt-4 px-0">
