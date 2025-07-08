@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 08, 2025 at 03:04 AM
+-- Generation Time: Jul 09, 2025 at 12:19 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,6 +33,20 @@ CREATE TABLE `audit_log` (
   `action` varchar(255) NOT NULL,
   `details` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_logs`
+--
+
+CREATE TABLE `audit_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `details` text DEFAULT NULL,
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -71,8 +85,8 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `title`, `description`, `start_date`, `end_date`, `created_by`, `created_at`, `status`) VALUES
-(1, 'probably', 'fjjf', '2025-07-14', '2025-07-25', 1, '2025-07-07 11:41:33', 'Active'),
-(2, 'Car manager', 'Management system for cars', '2025-07-14', '2025-07-22', 9, '2025-07-07 12:50:38', 'Active');
+(1, 'probably', 'fjjf', '2025-07-14', '2025-07-25', 2, '2025-07-07 11:41:33', 'Active'),
+(2, 'Car manager', 'Management system for cars', '2025-07-07', '2025-07-17', 9, '2025-07-07 12:50:38', 'Active');
 
 -- --------------------------------------------------------
 
@@ -144,11 +158,11 @@ INSERT INTO `system_settings` (`id`, `setting_key`, `setting_value`, `setting_ty
 (8, 'smtp_user', 'admin@company.com', 'string', '2025-07-07 22:45:24', '2025-07-07 22:49:09'),
 (9, 'from_email', 'noreply@company.com', 'string', '2025-07-07 22:45:24', '2025-07-07 22:49:09'),
 (10, 'from_name', 'Project Management System', 'string', '2025-07-07 22:45:24', '2025-07-07 22:49:09'),
-(11, 'session_timeout', '300', 'integer', '2025-07-07 22:45:24', '2025-07-07 22:49:31'),
-(12, 'max_login_attempts', '5', 'integer', '2025-07-07 22:45:24', '2025-07-07 22:49:31'),
-(13, 'password_min_length', '8', 'integer', '2025-07-07 22:45:24', '2025-07-07 22:49:31'),
-(14, 'require_2fa', '0', 'boolean', '2025-07-07 22:45:24', '2025-07-07 22:49:31'),
-(15, 'force_password_change', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-07 22:49:31'),
+(11, 'session_timeout', '30', 'integer', '2025-07-07 22:45:24', '2025-07-08 22:05:52'),
+(12, 'max_login_attempts', '3', 'integer', '2025-07-07 22:45:24', '2025-07-08 22:05:52'),
+(13, 'password_min_length', '8', 'integer', '2025-07-07 22:45:24', '2025-07-08 22:05:52'),
+(14, 'require_2fa', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-08 22:05:52'),
+(15, 'force_password_change', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-08 22:05:52'),
 (16, 'email_notifications', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-07 23:30:13'),
 (17, 'task_assignments', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-07 23:30:13'),
 (18, 'project_updates', '1', 'boolean', '2025-07-07 22:45:24', '2025-07-07 23:30:13'),
@@ -173,16 +187,21 @@ CREATE TABLE `tasks` (
   `deadline` date DEFAULT NULL,
   `created_by` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `progress` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `title`, `description`, `assigned_to`, `status`, `priority`, `deadline`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 1, 'create the homepage', 'make sure not to commit to github', 2, 'In Progress', 'High', '2025-07-09', 1, '2025-07-07 11:51:54', '2025-07-07 11:52:35'),
-(2, 2, 'Do the backend', 'Make sure not to push to Github', 4, 'Completed', 'High', '2025-07-22', 1, '2025-07-07 12:52:13', '2025-07-07 12:54:11');
+INSERT INTO `tasks` (`id`, `project_id`, `title`, `description`, `assigned_to`, `status`, `priority`, `deadline`, `created_by`, `created_at`, `updated_at`, `progress`) VALUES
+(1, 1, 'create the homepage', 'make sure not to commit to github', 2, 'In Progress', 'High', '2025-07-09', 1, '2025-07-07 11:51:54', '2025-07-08 16:31:34', 59),
+(2, 2, 'Do the backend', 'Make sure not to push to Github', 4, 'Completed', 'High', '2025-07-22', 1, '2025-07-07 12:52:13', '2025-07-07 12:54:11', 0),
+(3, 2, 'Fix the bugs', '', 2, 'Pending', 'High', '2025-07-09', 9, '2025-07-08 14:37:21', '2025-07-08 16:31:20', 10),
+(4, 2, 'Start the zibitus app', '', 2, 'Completed', 'Low', '2025-07-07', 9, '2025-07-08 16:34:28', '2025-07-08 21:18:19', 100),
+(5, 2, 'Create another one', 'This one has a description', 2, 'Pending', 'Medium', '2025-07-08', 9, '2025-07-08 16:35:56', NULL, 0),
+(6, 2, 'New task', 'This should be overdue', 4, 'Pending', 'Medium', '2025-07-05', 9, '2025-07-08 20:11:56', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -219,7 +238,10 @@ CREATE TABLE `task_comments` (
 INSERT INTO `task_comments` (`id`, `task_id`, `user_id`, `comment`, `created_at`) VALUES
 (1, 1, 2, 'am starting', '2025-07-07 11:52:35'),
 (2, 2, 4, 'Am now starting', '2025-07-07 12:53:01'),
-(3, 2, 4, 'I\'ve completed the Backend', '2025-07-07 12:54:11');
+(3, 2, 4, 'I\'ve completed the Backend', '2025-07-07 12:54:11'),
+(4, 3, 2, 'starting', '2025-07-08 16:30:59'),
+(5, 4, 2, 'Ive started', '2025-07-08 21:17:49'),
+(6, 4, 2, 'Done', '2025-07-08 21:18:19');
 
 -- --------------------------------------------------------
 
@@ -237,18 +259,22 @@ CREATE TABLE `users` (
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `active` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `email`, `password`, `role_id`, `created_at`, `first_name`, `last_name`, `profile_picture`, `updated_at`) VALUES
-(1, 'admin', 'admin@mail.com', '$2y$10$qUVfwQJfL70PXM.bqhjFV.fCp8QdI/ibC1QIyCI7bzCpnY/HoBT3W', 1, '2025-07-07 11:23:19', 'John', 'Antonio', 'uploads/profiles/profile_1_1751930975.jpg', '2025-07-07 23:29:35'),
-(2, 'member', 'member@mail.com', '$2y$10$/U6NMR.EfaAaYIvXDugb6uzjYQB8RYPVbytt89663q4hGIhMQX0Ca', 3, '2025-07-07 11:46:55', NULL, NULL, NULL, '2025-07-07 22:45:51'),
-(4, 'ben', 'ben@mail.com', '$2y$10$SBTz9FC1l7yXnAQYp/2vbOTZG/X80zza6ZAX9IRc.Yg0oJOixlyxC', 3, '2025-07-07 12:47:13', NULL, NULL, NULL, '2025-07-07 22:45:51'),
-(9, 'Manager', 'manager@mail.com', '$2y$10$AdPqx18nzLpy3Aa.1n1wmODos7T3H3LoJ49.GeYSVQaQ5mwxX.aSW', 2, '2025-07-07 20:26:42', NULL, NULL, NULL, '2025-07-07 22:45:51');
+INSERT INTO `users` (`id`, `username`, `email`, `password`, `role_id`, `created_at`, `first_name`, `last_name`, `profile_picture`, `updated_at`, `active`) VALUES
+(1, 'Ben', 'ben@mail.com', '$2y$10$44KCEvunMoo1B7yQIfcBquU07jAbfIF4/3MYwkb96AtjAlHbGy6ri', 2, '2025-07-07 11:23:19', 'John', 'Antonio', 'uploads/profiles/profile_1_1751930975.jpg', '2025-07-08 22:16:59', 1),
+(2, 'Michelle', 'michelle@mail.com', '$2y$10$/U6NMR.EfaAaYIvXDugb6uzjYQB8RYPVbytt89663q4hGIhMQX0Ca', 3, '2025-07-07 11:46:55', 'Ben', 'Teekay', NULL, '2025-07-08 22:14:56', 1),
+(4, 'Precious', 'precious@mail.com', '$2y$10$fkfj/kSUliUU.Cyxo8rWLeLigeYM/H1mVK0XrRfb7CQ0Xg7RdA2QC', 2, '2025-07-07 12:47:13', NULL, NULL, NULL, '2025-07-08 22:13:43', 1),
+(9, 'Manager', 'manager@mail.com', '$2y$10$AdPqx18nzLpy3Aa.1n1wmODos7T3H3LoJ49.GeYSVQaQ5mwxX.aSW', 2, '2025-07-07 20:26:42', NULL, NULL, NULL, '2025-07-07 22:45:51', 1),
+(10, 'Administrator', 'administrator@mail.com', '$2y$10$.gjrCrh5bnJyaCoPhJUyh.vB.IEg5AckOge6KC7g6NXfCy4OM38mC', 1, '2025-07-08 01:30:15', 'John', 'Antonio', 'uploads/profiles/profile_10_1752010986.png', '2025-07-08 21:43:06', 1),
+(11, 'John', 'john@mail.com', '$2y$10$enNOuwkL0IZs3VmU3MJnZOyMKIJYhMMewDq6b94BnxZbxSU5Fcow2', 3, '2025-07-08 20:54:03', NULL, NULL, NULL, '2025-07-08 22:15:53', 1),
+(12, 'Daniella', 'dan@mail.com', '$2y$10$QeALjkslkfPR.z82yFIXFOZ2WEF0zdJUr4wsABi1xPcNkpbTR2C..', 3, '2025-07-08 21:33:22', 'Daniella', 'Koranteng', NULL, '2025-07-08 22:15:31', 1);
 
 --
 -- Indexes for dumped tables
@@ -258,6 +284,13 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `role_id`, `created_
 -- Indexes for table `audit_log`
 --
 ALTER TABLE `audit_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`);
 
@@ -343,6 +376,12 @@ ALTER TABLE `audit_log`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -370,13 +409,13 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `system_settings`
 --
 ALTER TABLE `system_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `task_attachments`
@@ -388,13 +427,13 @@ ALTER TABLE `task_attachments`
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- Constraints for dumped tables
@@ -405,6 +444,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `audit_log`
   ADD CONSTRAINT `audit_log_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  ADD CONSTRAINT `audit_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `notifications`

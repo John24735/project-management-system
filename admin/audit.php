@@ -1,26 +1,26 @@
 <?php require_once '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
 <?php
-// Demo: fetch logs from a table 'audit_logs' if exists, else use sample data
-$logs = [];
-$hasTable = false;
-try {
-    $logs = $pdo->query('SELECT l.*, u.username FROM audit_logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.timestamp DESC LIMIT 100')->fetchAll();
-    $hasTable = true;
-} catch (Exception $e) {
-    // Fallback to demo data
-    $logs = [
-        ['timestamp' => '2024-06-01 10:00', 'username' => 'admin', 'action' => 'User Created', 'details' => '{"user_id":5,"username":"jdoe"}'],
-        ['timestamp' => '2024-06-01 11:00', 'username' => 'manager', 'action' => 'Project Archived', 'details' => '{"project_id":3,"title":"Website Redesign"}'],
-    ];
-}
 // Filters
 $date = $_GET['date'] ?? '';
 $user = $_GET['user'] ?? '';
-if ($date)
-    $logs = array_filter($logs, fn($l) => strpos($l['timestamp'], $date) === 0);
-if ($user)
-    $logs = array_filter($logs, fn($l) => $l['username'] == $user);
+$where = [];
+$params = [];
+if ($date) {
+    $where[] = 'DATE(l.timestamp) = ?';
+    $params[] = $date;
+}
+if ($user) {
+    $where[] = 'u.username = ?';
+    $params[] = $user;
+}
+$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+// Fetch logs from audit_logs table
+$stmt = $pdo->prepare("SELECT l.*, u.username FROM audit_logs l LEFT JOIN users u ON l.user_id = u.id $where_sql ORDER BY l.timestamp DESC LIMIT 100");
+$stmt->execute($params);
+$logs = $stmt->fetchAll();
+// Get all users for filter
+$all_users = $pdo->query('SELECT DISTINCT u.username FROM audit_logs l LEFT JOIN users u ON l.user_id = u.id')->fetchAll();
 // Export CSV
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
     header('Content-Type: text/csv');
@@ -32,8 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
     fclose($out);
     exit;
 }
-// Get all users for filter
-$all_users = $hasTable ? $pdo->query('SELECT DISTINCT u.username FROM audit_logs l LEFT JOIN users u ON l.user_id = u.id')->fetchAll() : [['username' => 'admin'], ['username' => 'manager']];
 ?>
 <div class="main-content">
     <div class="d-flex align-items-center mb-2 gap-2">

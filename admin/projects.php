@@ -1,39 +1,10 @@
-<?php require_once '../includes/header.php'; ?>
-<?php include '../includes/sidebar.php'; ?>
 <?php
-// Fetch users for owner dropdown
-$owners = $pdo->query('SELECT id, username FROM users')->fetchAll();
-// Handle filters/search
-$search = trim($_GET['search'] ?? '');
-$where = [];
-$params = [];
-if ($search) {
-    $where[] = '(p.title LIKE ? OR u.username LIKE ?)';
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
-$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-$projects = $pdo->prepare("SELECT p.*, u.username as owner FROM projects p JOIN users u ON p.created_by = u.id $where_sql ORDER BY p.created_at DESC");
-$projects->execute($params);
-$projects = $projects->fetchAll();
-// Handle create, edit, archive (POST)
+// Handle POST actions before any output
+require_once '../config/db.php';
+require_once '../includes/auth.php';
 $action_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['create_project'])) {
-        $title = trim($_POST['title']);
-        $desc = trim($_POST['description']);
-        $start = $_POST['start_date'];
-        $end = $_POST['end_date'];
-        $owner = $_POST['owner_id'];
-        if ($title && $start && $end && $owner) {
-            $stmt = $pdo->prepare('INSERT INTO projects (title, description, start_date, end_date, created_by, status) VALUES (?, ?, ?, ?, ?, ?)');
-            if ($stmt->execute([$title, $desc, $start, $end, $owner, 'Active'])) {
-                $action_msg = "<div class='alert alert-success p-2 my-2'>Project created.</div>";
-            } else {
-                $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to create project.</div>";
-            }
-        }
-    } elseif (isset($_POST['edit_project'])) {
+    if (isset($_POST['edit_project'])) {
         $id = $_POST['project_id'];
         $title = trim($_POST['title']);
         $desc = trim($_POST['description']);
@@ -57,6 +28,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: projects.php?msg=1');
     exit;
 }
+?>
+<?php require_once '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
+<?php
+// Fetch users for owner dropdown
+$owners = $pdo->query('SELECT id, username FROM users')->fetchAll();
+// Handle filters/search
+$search = trim($_GET['search'] ?? '');
+$where = [];
+$params = [];
+if ($search) {
+    $where[] = '(p.title LIKE ? OR u.username LIKE ?)';
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+}
+$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+$projects = $pdo->prepare("SELECT p.*, u.username as owner FROM projects p JOIN users u ON p.created_by = u.id $where_sql ORDER BY p.created_at DESC");
+$projects->execute($params);
+$projects = $projects->fetchAll();
 ?>
 <div class="main-content">
     <div class="d-flex align-items-center mb-2 gap-2">

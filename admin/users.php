@@ -1,7 +1,15 @@
-<?php require_once '../includes/header.php'; ?>
-<?php include '../includes/sidebar.php'; ?>
 <?php
-// Fetch roles
+// Handle closing the reset password modal before any output
+if (isset($_POST['close_reset_modal'])) {
+    unset($_SESSION['reset_password_user'], $_SESSION['reset_password_value']);
+    header('Location: users.php');
+    exit;
+}
+// Handle create, edit, deactivate, reset password (POST) before any output
+require_once '../config/db.php';
+require_once '../includes/auth.php';
+$action_msg = '';
+// Fetch roles for later use
 $roles = $pdo->query('SELECT * FROM roles')->fetchAll();
 // Handle filters/search
 $search = trim($_GET['search'] ?? '');
@@ -18,11 +26,7 @@ if ($role_filter) {
     $params[] = $role_filter;
 }
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-$users = $pdo->prepare("SELECT u.*, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id $where_sql ORDER BY u.created_at DESC");
-$users->execute($params);
-$users = $users->fetchAll();
-// Handle create, edit, deactivate, reset password (POST)
-$action_msg = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create_user'])) {
         $username = trim($_POST['username']);
@@ -52,6 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('UPDATE users SET active=0 WHERE id=?');
         if ($stmt->execute([$id])) {
             $action_msg = "<div class='alert alert-success p-2 my-2'>User deactivated.</div>";
+        } else {
+            $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to deactivate user.</div>";
+        }
+    } elseif (isset($_POST['reactivate_user'])) {
+        $id = $_POST['user_id'];
+        $stmt = $pdo->prepare('UPDATE users SET active=1 WHERE id=?');
+        if ($stmt->execute([$id])) {
+            $action_msg = "<div class='alert alert-success p-2 my-2'>User reactivated.</div>";
+        } else {
+            $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to reactivate user.</div>";
         }
     } elseif (isset($_POST['reset_password'])) {
         $id = $_POST['user_id'];
@@ -59,14 +73,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hash = password_hash($newpass, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare('UPDATE users SET password=? WHERE id=?');
         if ($stmt->execute([$hash, $id])) {
-            $action_msg = "<div class='alert alert-success p-2 my-2'>Password reset to: <b>" . htmlspecialchars($newpass) . "</b></div>";
+            // Store the new password in session to show in modal
+            $_SESSION['reset_password_user'] = $id;
+            $_SESSION['reset_password_value'] = $newpass;
+            // Redirect to show modal
+            header('Location: users.php?show_reset_modal=1');
+            exit;
+        }
+    } elseif (isset($_POST['delete_user'])) {
+        $id = $_POST['user_id'];
+        if ($id != $_SESSION['user_id']) { // Prevent self-delete
+            // Check for references in tasks
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM tasks WHERE created_by = ? OR assigned_to = ?');
+            $stmt->execute([$id, $id]);
+            if ($stmt->fetchColumn() > 0) {
+                $action_msg = "<div class='alert alert-warning p-2 my-2'>Cannot delete user: they are referenced in tasks. Reassign or delete their tasks first.</div>";
+            } else {
+                $stmt = $pdo->prepare('DELETE FROM users WHERE id=?');
+                if ($stmt->execute([$id])) {
+                    $action_msg = "<div class='alert alert-success p-2 my-2'>User deleted.</div>";
+                } else {
+                    $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to delete user.</div>";
+                }
+            }
+        } else {
+            $action_msg = "<div class='alert alert-warning p-2 my-2'>You cannot delete your own account.</div>";
         }
     }
     // Refresh user list after action
     header('Location: users.php?msg=1');
     exit;
 }
+// Fetch users after any POST action
+$users = $pdo->prepare("SELECT u.*, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id $where_sql ORDER BY u.created_at DESC");
+$users->execute($params);
+$users = $users->fetchAll();
 ?>
+<?php require_once '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
 <div class="main-content">
     <div class="d-flex align-items-center mb-2 gap-2">
         <i class="bi bi-people fs-5 text-primary"></i>
@@ -127,14 +171,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?php echo htmlspecialchars($u['created_at']); ?></td>
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1" data-bs-toggle="modal"
-                                data-bs-target="#editUserModal<?php echo $u['id']; ?>"><i class="bi bi-pencil"></i></button>
-                            <button type="submit" name="deactivate_user" value="1"
-                                class="btn btn-outline-warning btn-sm py-0 px-1 ms-1"
-                                onclick="return confirm('Deactivate this user?')"><i class="bi bi-person-x"></i><input
-                                    type="hidden" name="user_id" value="<?php echo $u['id']; ?>"></button>
-                            <button type="submit" name="reset_password" value="1"
-                                class="btn btn-outline-info btn-sm py-0 px-1 ms-1"><i class="bi bi-key"></i><input
-                                    type="hidden" name="user_id" value="<?php echo $u['id']; ?>"></button>
+                                data-bs-target="#editUserModal<?php echo $u['id']; ?>" title="Edit User"><i
+                                    class="bi bi-pencil"></i></button>
+                            <?php if ($isActive): ?>
+                                <form method="post" style="display:inline">
+                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                    <button type="submit" name="deactivate_user" value="1"
+                                        class="btn btn-outline-warning btn-sm py-0 px-1 ms-1"
+                                        onclick="return confirm('Deactivate this user?')" title="Deactivate User"><i
+                                            class="bi bi-person-x"></i></button>
+                                </form>
+                            <?php else: ?>
+                                <form method="post" style="display:inline">
+                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                    <button type="submit" name="reactivate_user" value="1"
+                                        class="btn btn-outline-success btn-sm py-0 px-1 ms-1"
+                                        onclick="return confirm('Reactivate this user?')" title="Reactivate User"><i
+                                            class="bi bi-person-check"></i></button>
+                                </form>
+                            <?php endif; ?>
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                <button type="submit" name="reset_password" value="1"
+                                    class="btn btn-outline-info btn-sm py-0 px-1 ms-1" title="Reset Password"><i
+                                        class="bi bi-key"></i></button>
+                            </form>
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                <button type="submit" name="delete_user" value="1"
+                                    class="btn btn-outline-danger btn-sm py-0 px-1 ms-1"
+                                    onclick="return confirm('Delete this user? This cannot be undone.')" title="Delete User"><i
+                                        class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     <!-- Edit Modal -->
@@ -222,4 +290,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
+<?php if (isset($_GET['show_reset_modal']) && isset($_SESSION['reset_password_user']) && isset($_SESSION['reset_password_value'])): ?>
+    <!-- Password Reset Modal -->
+    <div class="modal fade show" id="resetPasswordModal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> Password Reset</h5>
+                    <button type="button" class="btn-close" onclick="closeResetModal()"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-2">The new password for user ID
+                        <b><?php echo htmlspecialchars($_SESSION['reset_password_user']); ?></b> is:
+                    </p>
+                    <div class="input-group mb-2" style="max-width:300px;margin:auto;">
+                        <input type="text" class="form-control text-center fw-bold" id="resetPasswordValue"
+                            value="<?php echo htmlspecialchars($_SESSION['reset_password_value']); ?>" readonly>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('resetPasswordValue').value)"><i
+                                class="bi bi-clipboard"></i></button>
+                    </div>
+                    <small class="text-muted">Copy and share this password with the user.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="closeResetModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form id="closeResetModalForm" method="post" style="display:none;"><input type="hidden" name="close_reset_modal"
+            value="1"></form>
+    <script>
+        // Focus and select the password for easy copying
+        document.getElementById('resetPasswordValue').focus();
+        document.getElementById('resetPasswordValue').select();
+        function closeResetModal() {
+            document.getElementById('resetPasswordModal').style.display = 'none';
+            document.getElementById('closeResetModalForm').submit();
+        }
+    </script>
+<?php endif; ?>
 <?php require_once '../includes/footer.php'; ?>

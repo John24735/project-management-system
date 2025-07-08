@@ -4,7 +4,7 @@ if (!is_member()) {
     header('Location: ../index.php');
     exit;
 }
-$task_id = $_GET['task_id'] ?? null;
+$task_id = $_POST['task_id'] ?? $_GET['task_id'] ?? null;
 if (!$task_id) {
     echo '<div class="alert alert-danger">Task not found.</div>';
     require_once __DIR__ . '/../includes/footer.php';
@@ -23,14 +23,16 @@ $error = '';
 $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?? $task['status'];
+    $progress = isset($_POST['progress']) ? (int) $_POST['progress'] : (isset($task['progress']) ? (int) $task['progress'] : 0);
     $comment = trim($_POST['comment'] ?? '');
-    $stmt = $pdo->prepare('UPDATE tasks SET status = ?, updated_at = NOW() WHERE id = ?');
-    if ($stmt->execute([$status, $task_id])) {
+    $stmt = $pdo->prepare('UPDATE tasks SET status = ?, progress = ?, updated_at = NOW() WHERE id = ?');
+    if ($stmt->execute([$status, $progress, $task_id])) {
         if ($comment) {
             $stmt2 = $pdo->prepare('INSERT INTO task_comments (task_id, user_id, comment) VALUES (?, ?, ?)');
             $stmt2->execute([$task_id, $_SESSION['user_id'], $comment]);
         }
-        $success = 'Task updated successfully!';
+        header('Location: tasks.php');
+        exit;
     } else {
         $error = 'Failed to update task.';
     }
@@ -55,8 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </select>
     </div>
     <div class="mb-3">
+        <label class="form-label">Progress</label>
+        <input type="number" name="progress" class="form-control" value="<?php echo $task['progress'] ?? ''; ?>">
+    </div>
+    <div class="mb-3">
         <label class="form-label">Comment</label>
-        <textarea name="comment" class="form-control"></textarea>
+        <textarea name="comment" class="form-control"><?php echo $task['comment'] ?? ''; ?></textarea>
     </div>
     <button type="submit" class="btn btn-primary">Update Task</button>
 </form>

@@ -44,6 +44,39 @@ $profile_picture_url = get_profile_picture_url($user);
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'audit.php')
                 echo ' active'; ?>" href="../admin/audit.php"><i class="bi bi-clipboard-data"></i> Audit Logs</a>
         </nav>
+    <?php elseif ($role === 'Manager'): ?>
+        <nav class="nav flex-column mb-2">
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'dashboard.php')
+                echo ' active'; ?>" href="../manager/dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'projects.php')
+                echo ' active'; ?>" href="../manager/projects.php"><i class="bi bi-folder2-open"></i> My Projects</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'tasks.php')
+                echo ' active'; ?>" href="../manager/tasks.php"><i class="bi bi-list-task"></i> Tasks</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'team.php')
+                echo ' active'; ?>" href="../manager/team.php"><i class="bi bi-people"></i> Team</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'reports.php')
+                echo ' active'; ?>" href="../manager/reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'notifications.php')
+                echo ' active'; ?>" href="../manager/notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+        </nav>
+    <?php elseif ($role === 'Member'): ?>
+        <nav class="nav flex-column mb-2">
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'dashboard.php')
+                echo ' active'; ?>"
+                href="../member/dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'tasks.php')
+                echo ' active'; ?>"
+                href="../member/tasks.php"><i class="bi bi-list-task"></i> My Tasks</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'project_overview.php')
+                echo ' active'; ?>"
+                href="../member/project_overview.php"><i class="bi bi-folder2-open"></i> Project Overview</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'notifications.php')
+                echo ' active'; ?>"
+                href="../member/notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'profile.php')
+                echo ' active'; ?>"
+                href="../member/profile.php"><i class="bi bi-person"></i> Profile</a>
+        </nav>
     <?php else: ?>
         <div class="text-uppercase d-flex align-items-center gap-2 mb-1"><i class="bi bi-list-ul"></i> Menu</div>
         <nav class="nav flex-column mb-2">
