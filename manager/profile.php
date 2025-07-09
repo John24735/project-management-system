@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/header.php';
-if (!is_member()) {
+if (!is_manager()) {
     header('Location: ../index.php');
     exit;
 }

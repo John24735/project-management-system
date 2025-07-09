@@ -23,6 +23,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute([$id])) {
             $action_msg = "<div class='alert alert-success p-2 my-2'>Project archived.</div>";
         }
+    } elseif (isset($_POST['delete_project'])) {
+        $id = $_POST['project_id'];
+        // Check for tasks
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM tasks WHERE project_id = ?');
+        $stmt->execute([$id]);
+        $task_count = $stmt->fetchColumn();
+        // Get project status
+        $stmt = $pdo->prepare('SELECT status FROM projects WHERE id = ?');
+        $stmt->execute([$id]);
+        $status = $stmt->fetchColumn();
+        if ($task_count == 0 || $status == 'Completed') {
+            $stmt = $pdo->prepare('DELETE FROM projects WHERE id = ?');
+            if ($stmt->execute([$id])) {
+                $action_msg = "<div class='alert alert-success p-2 my-2'>Project deleted.</div>";
+            } else {
+                $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to delete project.</div>";
+            }
+        } else {
+            $action_msg = "<div class='alert alert-warning p-2 my-2'>Cannot delete project: it has tasks and is not completed.</div>";
+        }
+        header('Location: projects.php?msg=1');
+        exit;
+    } elseif (isset($_POST['create_project'])) {
+        $title = trim($_POST['title']);
+        $desc = trim($_POST['description']);
+        $start = $_POST['start_date'];
+        $end = $_POST['end_date'];
+        $owner = $_POST['owner_id'];
+        $stmt = $pdo->prepare('INSERT INTO projects (title, description, start_date, end_date, created_by, status, created_at) VALUES (?, ?, ?, ?, ?, "Active", NOW())');
+        if ($stmt->execute([$title, $desc, $start, $end, $owner])) {
+            $action_msg = "<div class='alert alert-success p-2 my-2'>Project created.</div>";
+        } else {
+            $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to create project.</div>";
+        }
+        header('Location: projects.php?msg=1');
+        exit;
     }
     // Refresh project list after action
     header('Location: projects.php?msg=1');
@@ -48,60 +84,81 @@ $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $projects = $pdo->prepare("SELECT p.*, u.username as owner FROM projects p JOIN users u ON p.created_by = u.id $where_sql ORDER BY p.created_at DESC");
 $projects->execute($params);
 $projects = $projects->fetchAll();
+
+function project_due_status($end_date, $status)
+{
+    if ($status === 'Completed')
+        return '<span class="badge bg-info">Completed</span>';
+    $today = new DateTime();
+    $end = new DateTime($end_date);
+    $diff = (int) $today->diff($end)->format('%r%a');
+    if ($diff < 0)
+        return '<span class="badge bg-danger">Overdue</span>';
+    if ($diff === 0)
+        return '<span class="badge bg-warning text-dark">Due Today</span>';
+    if ($diff === 1)
+        return '<span class="badge bg-success">1 day left</span>';
+    return '<span class="badge bg-success">' . $diff . ' days left</span>';
+}
 ?>
 <style>
     .project-card {
         background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(80, 80, 180, 0.08);
-        padding: 1.2rem;
-        margin-bottom: 1rem;
+        position: relative;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(80, 80, 180, 0.07);
+        padding: 0.7rem 1rem 0.7rem 1.1rem;
+        margin-bottom: 0.7rem;
         border-left: 4px solid #e9ecef;
-        transition: box-shadow 0.2s, transform 0.2s;
+        transition: box-shadow 0.16s, transform 0.16s;
         cursor: pointer;
+        min-height: unset;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .project-card:hover {
-        box-shadow: 0 4px 20px rgba(80, 80, 180, 0.12);
-        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(80, 80, 180, 0.13);
+        transform: translateY(-1px);
     }
 
     .project-card .project-title {
-        font-size: 1.1rem;
+        font-size: 1.03rem;
         font-weight: 600;
         color: #2d2d4d;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.18rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
 
     .project-card .project-description {
         color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 0.8rem;
-        line-height: 1.4;
+        font-size: 0.89rem;
+        margin-bottom: 0.3rem;
+        line-height: 1.3;
     }
 
     .project-card .project-meta {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 0.8rem;
-        font-size: 0.85rem;
+        gap: 0.7rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.83rem;
         color: #888;
     }
 
     .project-card .project-dates {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        font-size: 0.85rem;
+        gap: 0.7rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.83rem;
     }
 
     .project-card .date-item {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.2rem;
     }
 
     .project-card .date-label {
@@ -115,8 +172,11 @@ $projects = $projects->fetchAll();
 
     .project-card .project-actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.4rem;
         justify-content: flex-end;
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
     }
 
     .project-card.border-success {
@@ -211,6 +271,9 @@ $projects = $projects->fetchAll();
                                 <span class="date-value"><?php echo $end_date->format('M j, Y'); ?></span>
                             </div>
                         </div>
+                        <div class="mb-2">
+                            <?php echo project_due_status($p['end_date'], $status); ?>
+                        </div>
                         <div class="project-actions">
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
                                 data-bs-target="#editProjectModal<?php echo $p['id']; ?>" title="Edit Project">
@@ -222,6 +285,9 @@ $projects = $projects->fetchAll();
                                     onclick="return confirm('Archive this project?')" title="Archive Project">
                                     <i class="bi bi-archive"></i>
                                 </button>
+                                <button type="submit" name="delete_project" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Delete this project? This cannot be undone.')"
+                                    title="Delete Project"><i class="bi bi-trash"></i></button>
                             </form>
                         </div>
                     </div>
@@ -272,6 +338,9 @@ $projects = $projects->fetchAll();
                                 <button type="submit" name="archive_project"
                                     class="btn btn-outline-warning btn-sm py-0 px-1 ms-1"
                                     onclick="return confirm('Archive this project?')"><i class="bi bi-archive"></i></button>
+                                <button type="submit" name="delete_project" class="btn btn-outline-danger btn-sm py-0 px-1 ms-1"
+                                    onclick="return confirm('Delete this project? This cannot be undone.')"><i
+                                        class="bi bi-trash"></i></button>
                             </form>
                         </td>
                     </tr>

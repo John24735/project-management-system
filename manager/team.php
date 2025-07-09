@@ -203,10 +203,8 @@ foreach ($stmt->fetchAll() as $row) {
                     <div class="team-card-body">
                         <div class="team-card-details">
                             <div><span class="label">Email:</span> <span
-                                    class="value"><?php echo htmlspecialchars($member['username']); ?>@mail.com</span></div>
-                            <div><span class="label">Gender:</span> <span class="value">N/A</span></div>
-                            <div><span class="label">Contact:</span> <span class="value">N/A</span></div>
-                            <div><span class="label">Nationality:</span> <span class="value">N/A</span></div>
+                                    class="value"><?php echo htmlspecialchars($member['username']); ?>@mail.com</span>
+                            </div>
                         </div>
                         <div class="team-card-photo">
                             <?php
@@ -218,8 +216,8 @@ foreach ($stmt->fetchAll() as $row) {
                         </div>
                     </div>
                     <div class="team-card-footer">
-                        <span
-                            class="member-name"><?php echo htmlspecialchars($name) ?: htmlspecialchars($member['username']); ?></span>
+                        <div class="username">@<?php echo htmlspecialchars($member['username']); ?></div>
+
                         <div class="progress">
                             <?php
                             $total = $workloads[$member['id']] ?? 0;
@@ -231,7 +229,9 @@ foreach ($stmt->fetchAll() as $row) {
                                 <?php echo $progress; ?>%
                             </div>
                         </div>
-                        <div class="username">@<?php echo htmlspecialchars($member['username']); ?></div>
+                        <span
+                            class="member-name"><?php echo htmlspecialchars($name) ?: htmlspecialchars($member['username']); ?></span>
+
                     </div>
                 </div>
             </div>

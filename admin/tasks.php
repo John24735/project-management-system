@@ -17,6 +17,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task_id'], $_POST['st
     header('Location: tasks.php?view=' . urlencode($view));
     exit;
 }
+
+function human_friendly_date($date)
+{
+    $timestamp = strtotime($date);
+    $now = strtotime(date('Y-m-d'));
+    $diff = ($timestamp - $now) / 86400;
+    if ($diff === 0)
+        return 'Today';
+    if ($diff === 1)
+        return 'Tomorrow';
+    if ($diff === -1)
+        return 'Yesterday';
+    if ($diff > 1 && $diff < 7)
+        return 'In ' . intval($diff) . ' days';
+    if ($diff < -1 && $diff > -7)
+        return abs(intval($diff)) . ' days ago';
+    return date('M j, Y', $timestamp);
+}
 ?>
 <div class="main-content">
     <div class="d-flex align-items-center mb-2 gap-2">
@@ -31,136 +49,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task_id'], $_POST['st
         </div>
     </div>
     <?php if ($view == 'kanban'): ?>
-        <style>
-            .task-card {
-                background: #fff;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(80, 80, 180, 0.08);
-                padding: 0.65rem 0.8rem 0.65rem 1rem;
-                margin-bottom: 0.7rem;
-                border-left: 5px solid #eee;
-                transition: box-shadow 0.16s, transform 0.16s;
-                cursor: pointer;
-                min-height: unset;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-
-            .task-card:hover {
-                box-shadow: 0 4px 16px rgba(80, 80, 180, 0.13);
-                transform: translateY(-1px) scale(1.01);
-            }
-
-            .task-card .task-title {
-                font-size: 1.01rem;
-                font-weight: 600;
-                color: #2d2d4d;
-                margin-bottom: 0.08rem;
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
-            }
-
-            .task-card .badges {
-                margin-bottom: 0.18rem;
-                display: flex;
-                gap: 0.4rem;
-                flex-wrap: wrap;
-            }
-
-            .task-card .meta {
-                font-size: 0.91em;
-                color: #888;
-                margin-bottom: 0;
-                display: flex;
-                gap: 0.7rem;
-                align-items: center;
-            }
-
-            .task-card .deadline-badge {
-                background: #f5f6fa;
-                color: #2d2d4d;
-                border-radius: 1em;
-                padding: 0.12em 0.7em;
-                font-size: 0.91em;
-                border: 1px solid #e0e0e0;
-            }
-
-            .task-card.border-danger-subtle {
-                border-left-color: #e74c3c !important;
-            }
-
-            .task-card.border-warning-subtle {
-                border-left-color: #f39c12 !important;
-            }
-
-            .task-card.border-success-subtle {
-                border-left-color: #27ae60 !important;
-            }
-
-            .task-card.border-secondary-subtle {
-                border-left-color: #888 !important;
-            }
-
-            .badge-high {
-                background: #e74c3c;
-                color: #fff;
-            }
-
-            .badge-medium {
-                background: #f39c12;
-                color: #fff;
-            }
-
-            .badge-low {
-                background: #27ae60;
-                color: #fff;
-            }
-
-            .badge-none {
-                background: #888;
-                color: #fff;
-            }
-        </style>
-        <div class="row g-2">
-            <?php foreach ($kanban as $status => $list): ?>
+        <div class="row kanban-board g-2">
+            <?php foreach ($kanban as $status => $tasks): ?>
                 <div class="col-md-4">
-                    <div class="card summary-card p-2 mb-2">
-                        <div class="card-body p-2">
-                            <h5 class="card-title mb-2 d-flex align-items-center gap-2" style="font-size:1rem;"><i
-                                    class="bi bi-kanban"></i> <?php echo htmlspecialchars($status); ?></h5>
-                            <?php foreach ($list as $task): ?>
-                                <?php
-                                $priority = strtolower($task['priority']);
-                                $border = 'border-start border-3 ';
-                                if ($priority == 'high')
-                                    $border .= 'border-danger-subtle';
-                                elseif ($priority == 'medium')
-                                    $border .= 'border-warning-subtle';
-                                elseif ($priority == 'low')
-                                    $border .= 'border-success-subtle';
-                                else
-                                    $border .= 'border-secondary-subtle';
-                                $deadline = date('F j, Y', strtotime($task['deadline']));
-                                ?>
-                                <div class="task-card <?php echo $border; ?>" data-bs-toggle="modal"
-                                    data-bs-target="#taskModal<?php echo $task['id']; ?>">
-                                    <div class="task-title"><i class="bi bi-list-task"></i>
-                                        <?php echo htmlspecialchars($task['title']); ?></div>
-                                    <div class="badges">
-                                        <span class="badge bg-light text-secondary border border-1 border-secondary"><i
-                                                class="bi bi-kanban"></i> <?php echo htmlspecialchars($task['status']); ?></span>
-                                        <span class="badge badge-<?php echo $priority ?: 'none'; ?>"><i class="bi bi-flag"></i>
-                                            <?php echo htmlspecialchars($task['priority']); ?></span>
-                                        <span class="deadline-badge"><i class="bi bi-calendar-event"></i>
-                                            <?php echo $deadline; ?></span>
-                                    </div>
-                                    <div class="meta">
-                                        <span><i class="bi bi-folder"></i>
-                                            <?php echo htmlspecialchars($task['project_title']); ?></span>
-                                        <span><i class="bi bi-person"></i>
-                                            <?php echo htmlspecialchars($task['assigned_to_name']); ?></span>
+                    <div class="card">
+                        <div class="card-header bg-light fw-bold text-center"><?php echo htmlspecialchars($status); ?></div>
+                        <div class="kanban-column p-2" data-status="<?php echo htmlspecialchars($status); ?>"
+                            style="min-height:200px;">
+                            <?php foreach ($tasks as $task): ?>
+                                <div class="card mb-2 kanban-task" draggable="true" data-task-id="<?php echo $task['id']; ?>"
+                                    data-bs-toggle="modal" data-bs-target="#taskModal<?php echo $task['id']; ?>"
+                                    style="cursor:pointer;">
+                                    <div class="card-body p-2">
+                                        <div class="fw-bold mb-1"><?php echo htmlspecialchars($task['title']); ?></div>
+                                        <div class="text-muted mb-1" style="font-size:0.92rem;"><i
+                                                class="bi bi-folder2-open me-1"></i>
+                                            <?php echo htmlspecialchars($task['project_title']); ?></div>
+                                        <div class="text-muted mb-1" style="font-size:0.92rem;"><i class="bi bi-person me-1"></i>
+                                            <?php echo htmlspecialchars($task['assigned_to_name']); ?></div>
+                                        <div class="mb-1" style="font-size:0.92rem;"><i class="bi bi-calendar-event me-1"></i>
+                                            <?php echo human_friendly_date($task['deadline']); ?></div>
                                     </div>
                                 </div>
                                 <!-- Task Details Modal -->
@@ -174,35 +82,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task_id'], $_POST['st
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div class="row g-2 mb-2">
-                                                    <div class="col-6 small"><i class="bi bi-kanban me-1 text-secondary"></i>
-                                                        <strong>Status:</strong><br>
-                                                        <span
-                                                            class="badge bg-light text-secondary border border-1 border-secondary"><?php echo htmlspecialchars($task['status']); ?></span>
-                                                    </div>
-                                                    <div class="col-6 small"><i class="bi bi-flag me-1 text-warning"></i>
-                                                        <strong>Priority:</strong><br>
-                                                        <span
-                                                            class="badge badge-<?php echo $priority ?: 'none'; ?>"><?php echo htmlspecialchars($task['priority']); ?></span>
-                                                    </div>
-                                                    <div class="col-6 small"><i class="bi bi-folder me-1 text-primary"></i>
-                                                        <strong>Project:</strong><br>
-                                                        <?php echo htmlspecialchars($task['project_title']); ?>
-                                                    </div>
-                                                    <div class="col-6 small"><i class="bi bi-person me-1 text-info"></i>
-                                                        <strong>Assigned To:</strong><br>
-                                                        <?php echo htmlspecialchars($task['assigned_to_name']); ?>
-                                                    </div>
-                                                    <div class="col-12 small"><i class="bi bi-calendar-event me-1 text-success"></i>
-                                                        <strong>Deadline:</strong> <?php echo $deadline; ?>
-                                                    </div>
+                                                <div class="mb-2"><strong>Project:</strong>
+                                                    <?php echo htmlspecialchars($task['project_title']); ?></div>
+                                                <div class="mb-2"><strong>Assigned To:</strong>
+                                                    <?php echo htmlspecialchars($task['assigned_to_name']); ?></div>
+                                                <div class="mb-2"><strong>Status:</strong>
+                                                    <?php echo htmlspecialchars($task['status']); ?></div>
+                                                <div class="mb-2"><strong>Priority:</strong>
+                                                    <?php echo htmlspecialchars($task['priority']); ?></div>
+                                                <div class="mb-2"><strong>Due Date:</strong>
+                                                    <?php echo human_friendly_date($task['deadline']); ?>
+                                                    (<?php echo htmlspecialchars(date('M j, Y', strtotime($task['deadline']))); ?>)
                                                 </div>
-                                                <hr class="my-2">
-                                                <div class="bg-light rounded p-2 small">
-                                                    <i class="bi bi-info-circle me-1 text-muted"></i>
-                                                    <strong>Description:</strong><br>
-                                                    <?php echo nl2br(htmlspecialchars($task['description'] ?? 'No description.')); ?>
+                                                <div class="mb-2">
+                                                    <strong>Description:</strong><br><?php echo nl2br(htmlspecialchars($task['description'])); ?>
                                                 </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Close</button>
                                             </div>
                                         </div>
                                     </div>
@@ -213,6 +111,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task_id'], $_POST['st
                 </div>
             <?php endforeach; ?>
         </div>
+        <script>
+            // Minimal drag-and-drop for Kanban (copied from manager/tasks.php)
+            let draggedTask = null;
+            document.querySelectorAll('.kanban-task').forEach(el => {
+                el.addEventListener('dragstart', e => { draggedTask = el; });
+            });
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.addEventListener('dragover', e => { e.preventDefault(); });
+                col.addEventListener('drop', e => {
+                    if (draggedTask) {
+                        const taskId = draggedTask.getAttribute('data-task-id');
+                        const newStatus = col.getAttribute('data-status');
+                        // Submit status change via POST
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '';
+                        form.innerHTML = `<input type=\"hidden\" name=\"task_id\" value=\"${taskId}\"><input type=\"hidden\" name=\"status\" value=\"${newStatus}\">`;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            });
+        </script>
     <?php else: ?>
         <table class="table table-sm table-bordered align-middle" style="font-size:0.92rem;">
             <thead class="table-light">

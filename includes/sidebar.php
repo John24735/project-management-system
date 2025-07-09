@@ -58,24 +58,22 @@ $profile_picture_url = get_profile_picture_url($user);
                 echo ' active'; ?>" href="../manager/reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'notifications.php')
                 echo ' active'; ?>" href="../manager/notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+            <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'profile.php')
+                echo ' active'; ?>" href="../manager/profile.php"><i class="bi bi-person"></i> Profile</a>
         </nav>
     <?php elseif ($role === 'Member'): ?>
         <nav class="nav flex-column mb-2">
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'dashboard.php')
-                echo ' active'; ?>"
-                href="../member/dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
+                echo ' active'; ?>" href="../member/dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'tasks.php')
-                echo ' active'; ?>"
-                href="../member/tasks.php"><i class="bi bi-list-task"></i> My Tasks</a>
+                echo ' active'; ?>" href="../member/tasks.php"><i class="bi bi-list-task"></i> My Tasks</a>
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'project_overview.php')
-                echo ' active'; ?>"
-                href="../member/project_overview.php"><i class="bi bi-folder2-open"></i> Project Overview</a>
+                echo ' active'; ?>" href="../member/project_overview.php"><i class="bi bi-folder2-open"></i> Project
+                Overview</a>
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'notifications.php')
-                echo ' active'; ?>"
-                href="../member/notifications.php"><i class="bi bi-bell"></i> Notifications</a>
+                echo ' active'; ?>" href="../member/notifications.php"><i class="bi bi-bell"></i> Notifications</a>
             <a class="nav-link<?php if (basename($_SERVER['PHP_SELF']) == 'profile.php')
-                echo ' active'; ?>"
-                href="../member/profile.php"><i class="bi bi-person"></i> Profile</a>
+                echo ' active'; ?>" href="../member/profile.php"><i class="bi bi-person"></i> Profile</a>
         </nav>
     <?php else: ?>
         <div class="text-uppercase d-flex align-items-center gap-2 mb-1"><i class="bi bi-list-ul"></i> Menu</div>
