@@ -206,7 +206,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: relative;
         }
 
-        .code-block .keyword {
+        .code-block .reason {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .code-block .code-block .keyword {
             color: #4f46e5;
         }
 
@@ -269,6 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="code-visual">
             <div class="code-block">
+                <div class="reason">
+                    <h2>MIDSEM PROJECT {L 200}</h2>
+                </div>
                 <pre>
 <span class="keyword">impl</span> <span class="fn">Project_Management_Team</span> {
   <span class="comment">// Project Contributors</span>
