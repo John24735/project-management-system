@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 70px;
+            padding: 10px;
             z-index: 1000;
             /* Ensure it stays above content */
         }
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .logo-img img {
             width: auto;
-            height: 55px;
+            height: 70px;
             border-radius: 6px;
             background: whitesmoke;
         }
