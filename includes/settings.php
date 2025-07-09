@@ -123,11 +123,29 @@ function update_user_profile($user_id, $data)
 // Upload profile picture
 function upload_profile_picture($file, $user_id)
 {
+    global $pdo;
     $upload_dir = __DIR__ . '/../uploads/profiles/';
 
     // Create directory if it doesn't exist
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
+    }
+
+    // Delete old profile picture if it exists
+    try {
+        $stmt = $pdo->prepare('SELECT profile_picture FROM users WHERE id = ?');
+        $stmt->execute([$user_id]);
+        $old_picture = $stmt->fetchColumn();
+
+        if ($old_picture && !empty($old_picture)) {
+            $old_filepath = __DIR__ . '/../' . $old_picture;
+            if (file_exists($old_filepath) && is_file($old_filepath)) {
+                unlink($old_filepath);
+            }
+        }
+    } catch (Exception $e) {
+        // Log error but continue with upload
+        error_log("Error deleting old profile picture: " . $e->getMessage());
     }
 
     // Validate file

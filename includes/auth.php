@@ -8,7 +8,7 @@ function register_user($username, $email, $password, $role_id)
 {
     global $pdo;
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role_id, active, created_at) VALUES (?, ?, ?, ?, 1, NOW())');
     return $stmt->execute([$username, $email, $hash, $role_id]);
 }
 

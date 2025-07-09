@@ -1,10 +1,63 @@
-<?php require_once '../includes/header.php'; ?>
-<?php include '../includes/sidebar.php'; ?>
 <?php
+// Handle profile update redirect before any output
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['first_name'])) {
+    require_once '../config/db.php';
+    require_once '../includes/auth.php';
+    require_once '../includes/settings.php';
+
+    $user = current_user();
+    $data = [];
+    $has_changes = false;
+
+    // Check for changes
+    if (!empty($_POST['first_name']) && $_POST['first_name'] !== ($user['first_name'] ?? '')) {
+        $data['first_name'] = trim($_POST['first_name']);
+        $has_changes = true;
+    }
+    if (!empty($_POST['last_name']) && $_POST['last_name'] !== ($user['last_name'] ?? '')) {
+        $data['last_name'] = trim($_POST['last_name']);
+        $has_changes = true;
+    }
+    if (!empty($_POST['email']) && $_POST['email'] !== ($user['email'] ?? '')) {
+        $data['email'] = trim($_POST['email']);
+        $has_changes = true;
+    }
+    if (!empty($_POST['password'])) {
+        $data['password'] = $_POST['password'];
+        $has_changes = true;
+    }
+
+    // Handle profile picture upload
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $upload = upload_profile_picture($_FILES['profile_picture'], $user['id']);
+        if ($upload['success']) {
+            $data['profile_picture'] = $upload['path'];
+            $has_changes = true;
+        }
+    }
+
+    if ($has_changes) {
+        if (update_user_profile($user['id'], $data)) {
+            // Refresh user session data
+            $user = current_user();
+            $_SESSION['user_data'] = $user;
+            // Set success message directly
+            $msg = '<div class="alert alert-success p-2 my-2">Profile updated successfully.</div>';
+        }
+    }
+}
+
+require_once '../includes/header.php';
+include '../includes/sidebar.php';
 require_once '../includes/settings.php';
 
 $tab = $_GET['tab'] ?? 'general';
 $msg = '';
+
+// Handle success message from redirect
+if (isset($_GET['msg']) && $_GET['msg'] === 'success') {
+    $msg = '<div class="alert alert-success p-2 my-2">Profile updated successfully.</div>';
+}
 
 // Handle POST (save settings)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -92,66 +145,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_setting('deadline_reminders', $deadline_reminders, 'boolean');
             set_setting('reminder_days', $reminder_days, 'integer');
             $msg = '<div class="alert alert-success p-2 my-2">Notification settings saved successfully.</div>';
-        }
-    } elseif ($tab == 'profile') {
-        require_once '../includes/auth.php';
-        $user = current_user();
-        
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [];
-            $has_changes = false;
-            
-            // Check for changes
-            if (!empty($_POST['first_name']) && $_POST['first_name'] !== ($user['first_name'] ?? '')) {
-                $data['first_name'] = trim($_POST['first_name']);
-                $has_changes = true;
-            }
-            if (!empty($_POST['last_name']) && $_POST['last_name'] !== ($user['last_name'] ?? '')) {
-                $data['last_name'] = trim($_POST['last_name']);
-                $has_changes = true;
-            }
-            if (!empty($_POST['email']) && $_POST['email'] !== ($user['email'] ?? '')) {
-                $data['email'] = trim($_POST['email']);
-                $has_changes = true;
-            }
-            if (!empty($_POST['password'])) {
-                $data['password'] = $_POST['password'];
-                $has_changes = true;
-            }
-            
-            // Handle profile picture upload
-            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-                $upload = upload_profile_picture($_FILES['profile_picture'], $user['id']);
-                if ($upload['success']) {
-                    $data['profile_picture'] = $upload['path'];
-                    $has_changes = true;
-                } else {
-                    $msg = '<div class="alert alert-danger p-2 my-2">' . $upload['message'] . '</div>';
-                }
-            }
-            
-            if ($has_changes && empty($msg)) {
-                if (update_user_profile($user['id'], $data)) {
-                    // Refresh user session data
-                    $user = current_user();
-                    
-                    // Update session with new user data
-                    $_SESSION['user_data'] = $user;
-                    
-                    $msg = '<div class="alert alert-success p-2 my-2">Profile updated successfully.</div>';
-                    
-                    // Force page refresh to update sidebar
-                    echo '<script>
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1000);
-                    </script>';
-                } else {
-                    $msg = '<div class="alert alert-danger p-2 my-2">Failed to update profile. Please try again.</div>';
-                }
-            } elseif (!$has_changes && empty($msg)) {
-                $msg = '<div class="alert alert-info p-2 my-2">No changes detected.</div>';
-            }
         }
     }
 }

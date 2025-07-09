@@ -5,6 +5,12 @@ if (isset($_POST['close_reset_modal'])) {
     header('Location: users.php');
     exit;
 }
+// Handle closing the new user modal before any output
+if (isset($_POST['close_new_user_modal'])) {
+    unset($_SESSION['new_user_password'], $_SESSION['new_user_username']);
+    header('Location: users.php');
+    exit;
+}
 // Handle create, edit, deactivate, reset password (POST) before any output
 require_once '../config/db.php';
 require_once '../includes/auth.php';
@@ -35,7 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = $_POST['password'] ?: substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
         if ($username && $email && $role_id) {
             if (register_user($username, $email, $password, $role_id)) {
-                $action_msg = "<div class='alert alert-success p-2 my-2'>User created. Default password: <b>" . htmlspecialchars($password) . "</b></div>";
+                // Store the password in session to show in modal
+                $_SESSION['new_user_password'] = $password;
+                $_SESSION['new_user_username'] = $username;
+                // Redirect to show modal
+                header('Location: users.php?show_new_user_modal=1');
+                exit;
             } else {
                 $action_msg = "<div class='alert alert-danger p-2 my-2'>Failed to create user. Username or email may exist.</div>";
             }
@@ -69,12 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif (isset($_POST['reset_password'])) {
         $id = $_POST['user_id'];
+
+        // Get the username for this user
+        $stmt = $pdo->prepare('SELECT username FROM users WHERE id = ?');
+        $stmt->execute([$id]);
+        $username = $stmt->fetchColumn();
+
         $newpass = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
         $hash = password_hash($newpass, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare('UPDATE users SET password=? WHERE id=?');
         if ($stmt->execute([$hash, $id])) {
-            // Store the new password in session to show in modal
-            $_SESSION['reset_password_user'] = $id;
+            // Store the new password and username in session to show in modal
+            $_SESSION['reset_password_user'] = $username;
             $_SESSION['reset_password_value'] = $newpass;
             // Redirect to show modal
             header('Location: users.php?show_reset_modal=1');
@@ -168,7 +185,10 @@ $users = $users->fetchAll();
                             echo $isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>';
                             ?>
                         </td>
-                        <td><?php echo htmlspecialchars($u['created_at']); ?></td>
+                        <td><?php
+                        $created_date = new DateTime($u['created_at']);
+                        echo $created_date->format('M j, Y g:i A');
+                        ?></td>
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1" data-bs-toggle="modal"
                                 data-bs-target="#editUserModal<?php echo $u['id']; ?>" title="Edit User"><i
@@ -193,15 +213,16 @@ $users = $users->fetchAll();
                             <form method="post" style="display:inline">
                                 <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
                                 <button type="submit" name="reset_password" value="1"
-                                    class="btn btn-outline-info btn-sm py-0 px-1 ms-1" title="Reset Password"><i
-                                        class="bi bi-key"></i></button>
+                                    class="btn btn-outline-info btn-sm py-0 px-1 ms-1"
+                                    onclick="return confirm('Reset password for <?php echo htmlspecialchars($u['username']); ?>?')"
+                                    title="Reset Password"><i class="bi bi-key"></i></button>
                             </form>
                             <form method="post" style="display:inline">
                                 <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
                                 <button type="submit" name="delete_user" value="1"
                                     class="btn btn-outline-danger btn-sm py-0 px-1 ms-1"
-                                    onclick="return confirm('Delete this user? This cannot be undone.')" title="Delete User"><i
-                                        class="bi bi-trash"></i></button>
+                                    onclick="return confirm('Delete this user? This cannot be undone.')"
+                                    title="Delete User"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
                     </tr>
@@ -290,6 +311,47 @@ $users = $users->fetchAll();
         </div>
     </div>
 </div>
+<?php if (isset($_GET['show_new_user_modal']) && isset($_SESSION['new_user_password']) && isset($_SESSION['new_user_username'])): ?>
+    <!-- New User Password Modal -->
+    <div class="modal fade show" id="newUserPasswordModal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> User Created Successfully</h5>
+                    <button type="button" class="btn-close" onclick="closeNewUserModal()"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-2">The password for user
+                        <b><?php echo htmlspecialchars($_SESSION['new_user_username']); ?></b> is:
+                    </p>
+                    <div class="input-group mb-2" style="max-width:300px;margin:auto;">
+                        <input type="text" class="form-control text-center fw-bold" id="newUserPasswordValue"
+                            value="<?php echo htmlspecialchars($_SESSION['new_user_password']); ?>" readonly>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('newUserPasswordValue').value)"><i
+                                class="bi bi-clipboard"></i></button>
+                    </div>
+                    <small class="text-muted">Copy and share this password with the user.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="closeNewUserModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form id="closeNewUserModalForm" method="post" style="display:none;"><input type="hidden" name="close_new_user_modal"
+            value="1"></form>
+    <script>
+        // Focus and select the password for easy copying
+        document.getElementById('newUserPasswordValue').focus();
+        document.getElementById('newUserPasswordValue').select();
+        function closeNewUserModal() {
+            document.getElementById('newUserPasswordModal').style.display = 'none';
+            document.getElementById('closeNewUserModalForm').submit();
+        }
+    </script>
+<?php endif; ?>
 <?php if (isset($_GET['show_reset_modal']) && isset($_SESSION['reset_password_user']) && isset($_SESSION['reset_password_value'])): ?>
     <!-- Password Reset Modal -->
     <div class="modal fade show" id="resetPasswordModal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);"
@@ -301,7 +363,7 @@ $users = $users->fetchAll();
                     <button type="button" class="btn-close" onclick="closeResetModal()"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <p class="mb-2">The new password for user ID
+                    <p class="mb-2">The new password for user
                         <b><?php echo htmlspecialchars($_SESSION['reset_password_user']); ?></b> is:
                     </p>
                     <div class="input-group mb-2" style="max-width:300px;margin:auto;">
@@ -322,7 +384,7 @@ $users = $users->fetchAll();
     <form id="closeResetModalForm" method="post" style="display:none;"><input type="hidden" name="close_reset_modal"
             value="1"></form>
     <script>
-        // Focus and select the password for easy copying
+        // Focus and select the pa    ssword for easy copying
         document.getElementById('resetPasswordValue').focus();
         document.getElementById('resetPasswordValue').select();
         function closeResetModal() {
