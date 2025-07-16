@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="code-visual">
             <div class="code-block">
                 <div class="reason">
-                    <h2>MIDSEM PROJECT {L 200}</h2>
+                    <h2>MIDSEM PROJECT GROUP 13 {L 200}</h2>
                 </div>
                 <pre>
 <span class="keyword">impl</span> <span class="fn">Project_Management_Team</span> {

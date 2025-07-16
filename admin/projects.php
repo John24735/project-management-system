@@ -430,7 +430,7 @@ function project_due_status($end_date, $status)
                         <input type="date" name="end_date" class="form-control form-control-sm" required>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Owner</label>
+                        <label class="form-label">Assign to</label>
                         <select name="owner_id" class="form-select form-select-sm">
                             <?php foreach ($owners as $o): ?>
                                 <option value="<?php echo $o['id']; ?>"><?php echo htmlspecialchars($o['username']); ?>
